@@ -787,12 +787,12 @@ Class SearchEverything {
 			// if we're searching custom taxonomies
 			if ( $this->options['se_use_tax_search'] )
 				{
-					$all_taxonomies = get_object_taxonomies('post');
+					$all_taxonomies = get_taxonomies(array('_builtin' => false, 'public' => true), 'names', 'and');
 					foreach ($all_taxonomies as $taxonomy)
 					{
 						if ($taxonomy == 'post_tag' || $taxonomy == 'category')
 						continue;
-						$on[] = "ttax.taxonomy = '".addslashes($taxonomy)."'";
+						$on[] = "ttax.taxonomy = '".$wpdb->escape($taxonomy)."'";
 					}
 				}
 			// build our final string
