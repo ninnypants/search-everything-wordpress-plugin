@@ -172,7 +172,7 @@ Class SearchEverything {
 	// add where clause to the search query
 	function se_search_where($where, $wp_query){
 
-		if(!$wp_query->is_search())
+		if(!$wp_query->is_search
 			return $where;
 
 		global $wpdb;
@@ -787,12 +787,12 @@ Class SearchEverything {
 			// if we're searching custom taxonomies
 			if ( $this->options['se_use_tax_search'] )
 				{
-					$all_taxonomies = get_taxonomies(array('_builtin' => false, 'public' => true), 'names', 'and');
+					$all_taxonomies = get_object_taxonomies('post');
 					foreach ($all_taxonomies as $taxonomy)
 					{
 						if ($taxonomy == 'post_tag' || $taxonomy == 'category')
 						continue;
-						$on[] = "ttax.taxonomy = '".$wpdb->escape($taxonomy)."'";
+						$on[] = "ttax.taxonomy = '".addslashes($taxonomy)."'";
 					}
 				}
 			// build our final string
