@@ -172,7 +172,7 @@ Class SearchEverything {
 	// add where clause to the search query
 	function se_search_where($where, $wp_query){
 
-		if(!$wp_query->is_search
+		if(!$wp_query->is_search)
 			return $where;
 
 		global $wpdb;
