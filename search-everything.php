@@ -37,7 +37,7 @@ Class SearchEverything {
 	var $wp_ver25;
 	var $wp_ver28;
 	private $query_instance;
-	
+
 	function SearchEverything(){
 		global $wp_version;
 		$this->wp_ver23 = ($wp_version >= '2.3');
@@ -48,8 +48,8 @@ Class SearchEverything {
 		if (is_admin()) {
 			include ( SE_ABSPATH  . 'views/options.php' );
 			$SEAdmin = new se_admin();
-			// Disable Search-Everything, because posts_join is not working properly in Wordpress-backend's Ajax functions 
-			if (basename($_SERVER["SCRIPT_NAME"]) == "admin-ajax.php") {	
+			// Disable Search-Everything, because posts_join is not working properly in Wordpress-backend's Ajax functions
+			if (basename($_SERVER["SCRIPT_NAME"]) == "admin-ajax.php") {
 				return true;
 			}
 		}
@@ -179,10 +179,10 @@ Class SearchEverything {
 
 		if(!$wp_query->is_search)
 			return $where;
-		
+
 		$this->query_instance = &$wp_query;
 		global $wpdb;
-		
+
 		$searchQuery = $this->se_search_default();
 
 		//add filters based upon option settings
@@ -698,7 +698,7 @@ Class SearchEverything {
 	function se_exclude_categories_join($join)
 	{
 		global $wpdb;
-		
+
 		if (!empty($this->query_instance->query_vars['s']))
 		{
 
@@ -793,7 +793,7 @@ Class SearchEverything {
 			// if we're searching custom taxonomies
 			if ( $this->options['se_use_tax_search'] )
 				{
-					$all_taxonomies = get_object_taxonomies('post');
+					$all_taxonomies = get_taxonomies(array('_builtin' => false));
 					foreach ($all_taxonomies as $taxonomy)
 					{
 						if ($taxonomy == 'post_tag' || $taxonomy == 'category')
