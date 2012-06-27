@@ -3,8 +3,8 @@ Contributors: dancameron, sproutventure
 Donate link: http://bit.ly/plugin-donations
 Tags: search, search highlight, tag search, category search, category exclusion, comment search, page search, admin, seo, post filter
 Requires at least: 3
-Tested up to: 3.3
-Stable tag: 6.9
+Tested up to: 3.4
+Stable tag: 6.9.4.1
 
 Increases Wordpress' default search functionality in three easy steps.
 

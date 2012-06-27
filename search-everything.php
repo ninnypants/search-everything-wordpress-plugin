@@ -3,7 +3,7 @@
 Plugin Name: Search Everything
 Plugin URI: https://github.com/sproutventure/search-everything-wordpress-plugin/
 Description: Adds search functionality without modifying any template pages: Activate, Configure and Search. Options Include: search highlight, search pages, excerpts, attachments, drafts, comments, tags and custom fields (metadata). Also offers the ability to exclude specific pages and posts. Does not search password-protected content.
-Version: 6.9.3
+Version: 6.9.4.1
 Author: Dan Cameron of Sprout Venture
 Author URI: http://sproutventure.com/
 */
@@ -36,7 +36,8 @@ Class SearchEverything {
 	var $wp_ver23;
 	var $wp_ver25;
 	var $wp_ver28;
-
+	private $query_instance;
+	
 	function SearchEverything(){
 		global $wp_version;
 		$this->wp_ver23 = ($wp_version >= '2.3');
@@ -47,6 +48,10 @@ Class SearchEverything {
 		if (is_admin()) {
 			include ( SE_ABSPATH  . 'views/options.php' );
 			$SEAdmin = new se_admin();
+			// Disable Search-Everything, because posts_join is not working properly in Wordpress-backend's Ajax functions 
+			if (basename($_SERVER["SCRIPT_NAME"]) == "admin-ajax.php") {	
+				return true;
+			}
 		}
 		//add filters based upon option settings
 		if ("Yes" == $this->options['se_use_tag_search'] || "Yes" == $this->options['se_use_category_search'] || "Yes" == $this->options['se_use_tax_search'])
@@ -149,9 +154,9 @@ Class SearchEverything {
 	// creates the list of search keywords from the 's' parameters.
 	function se_get_search_terms()
 	{
-		global $wp_query, $wpdb;
-		$s = isset($wp_query->query_vars['s']) ? $wp_query->query_vars['s'] : '';
-		$sentence = isset($wp_query->query_vars['sentence']) ? $wp_query->query_vars['sentence'] : false;
+		global $wpdb;
+		$s = isset($this->query_instance->query_vars['s']) ? $this->query_instance->query_vars['s'] : '';
+		$sentence = isset($this->query_instance->query_vars['sentence']) ? $this->query_instance->query_vars['sentence'] : false;
 		$search_terms = array();
 
 		if ( !empty($s) )
@@ -174,9 +179,10 @@ Class SearchEverything {
 
 		if(!$wp_query->is_search)
 			return $where;
-
+		
+		$this->query_instance = &$wp_query;
 		global $wpdb;
-
+		
 		$searchQuery = $this->se_search_default();
 
 		//add filters based upon option settings
@@ -226,9 +232,9 @@ Class SearchEverything {
 	// avoid issue with multiple terms
 	function se_search_default(){
 
-		global $wp_query, $wpdb;
+		global $wpdb;
 
-		$n = (isset($wp_query->query_vars['exact']) && $wp_query->query_vars['exact']) ? '' : '%';
+		$n = (isset($this->query_instance->query_vars['exact']) && $this->query_instance->query_vars['exact']) ? '' : '%';
 		$search = '';
 		$seperator = '';
 		$terms = $this->se_get_search_terms();
@@ -252,8 +258,8 @@ Class SearchEverything {
 	// Exclude post revisions
 	function se_no_revisions($where)
 	{
-		global $wp_query, $wpdb;
-		if (!empty($wp_query->query_vars['s']))
+		global $wpdb;
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 			if(!$this->wp_ver28)
 			{
@@ -267,8 +273,8 @@ Class SearchEverything {
 	// Exclude future posts fix provided by Mx
 	function se_no_future($where)
 	{
-		global $wp_query, $wpdb;
-		if (!empty($wp_query->query_vars['s']))
+		global $wpdb;
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 			if(!$this->wp_ver28)
 			{
@@ -301,8 +307,8 @@ Class SearchEverything {
 	//Duplicate fix provided by Tiago.Pocinho
 	function se_distinct($query)
 	{
-		global $wp_query, $wpdb;
-		if (!empty($wp_query->query_vars['s']))
+		global $wpdb;
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 			if (strstr($query, 'DISTINCT'))
 			{}
@@ -317,8 +323,8 @@ Class SearchEverything {
 	//search pages (except password protected pages provided by loops)
 	function se_search_pages($where)
 	{
-		global $wp_query, $wpdb;
-		if (!empty($wp_query->query_vars['s']))
+		global $wpdb;
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 
 			$where = str_replace('"', '\'', $where);
@@ -336,10 +342,10 @@ Class SearchEverything {
 	// create the search excerpts query
 	function se_build_search_excerpt()
 	{
-		global $wp_query, $wpdb;
-		$s = $wp_query->query_vars['s'];
+		global $wpdb;
+		$s = $this->query_instance->query_vars['s'];
 		$search_terms = $this->se_get_search_terms();
-		$exact = $wp_query->query_vars['exact'];
+		$exact = $this->query_instance->query_vars['exact'];
 		$search = '';
 
 		if ( !empty($search_terms) ) {
@@ -367,8 +373,8 @@ Class SearchEverything {
 	//search drafts
 	function se_search_draft_posts($where)
 	{
-		global $wp_query, $wpdb;
-		if (!empty($wp_query->query_vars['s']))
+		global $wpdb;
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 			$where = str_replace('"', '\'', $where);
 			if(!$this->wp_ver28)
@@ -388,8 +394,8 @@ Class SearchEverything {
 	//search attachments
 	function se_search_attachments($where)
 	{
-		global $wp_query, $wpdb;
-		if (!empty($wp_query->query_vars['s']))
+		global $wpdb;
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 			$where = str_replace('"', '\'', $where);
 			if(!$this->wp_ver28)
@@ -410,10 +416,10 @@ Class SearchEverything {
 	// create the comments data query
 	function se_build_search_comments()
 	{
-		global $wp_query, $wpdb;
-		$s = $wp_query->query_vars['s'];
+		global $wpdb;
+		$s = $this->query_instance->query_vars['s'];
 		$search_terms = $this->se_get_search_terms();
-		$exact = $wp_query->query_vars['exact'];
+		$exact = $this->query_instance->query_vars['exact'];
 
 		if ( !empty($search_terms) ) {
 			// Building search query on comments content
@@ -476,10 +482,10 @@ Class SearchEverything {
 	// Build the author search
 	function se_search_authors()
 	{
-		global $wp_query, $wpdb;
-		$s = $wp_query->query_vars['s'];
+		global $wpdb;
+		$s = $this->query_instance->query_vars['s'];
 		$search_terms = $this->se_get_search_terms();
-		$n = (isset($wp_query->query_vars['exact']) && $wp_query->query_vars['exact']) ? '' : '%';
+		$n = (isset($this->query_instance->query_vars['exact']) && $this->query_instance->query_vars['exact']) ? '' : '%';
 		$search = '';
 		$searchand = '';
 
@@ -520,10 +526,10 @@ Class SearchEverything {
 	// create the search meta data query
 	function se_build_search_metadata()
 	{
-		global $wp_query, $wpdb;
-		$s = $wp_query->query_vars['s'];
+		global $wpdb;
+		$s = $this->query_instance->query_vars['s'];
 		$search_terms = $this->se_get_search_terms();
-		$n = (isset($wp_query->query_vars['exact']) && $wp_query->query_vars['exact']) ? '' : '%';
+		$n = (isset($this->query_instance->query_vars['exact']) && $this->query_instance->query_vars['exact']) ? '' : '%';
 		$search = '';
 
 		if ( !empty($search_terms) ) {
@@ -561,10 +567,10 @@ Class SearchEverything {
 	// create the search tag query
 	function se_build_search_tag()
 	{
-		global $wp_query, $wpdb;
-		$s = $wp_query->query_vars['s'];
+		global $wpdb;
+		$s = $this->query_instance->query_vars['s'];
 		$search_terms = $this->se_get_search_terms();
-		$exact = $wp_query->query_vars['exact'];
+		$exact = $this->query_instance->query_vars['exact'];
 		$search = '';
 
 		if ( !empty($search_terms) )
@@ -599,10 +605,10 @@ Class SearchEverything {
 	// create the search categories query
 	function se_build_search_categories()
 	{
-		global $wp_query, $wpdb;
-		$s = $wp_query->query_vars['s'];
+		global $wpdb;
+		$s = $this->query_instance->query_vars['s'];
 		$search_terms = $this->se_get_search_terms();
-		$exact = $wp_query->query_vars['exact'];
+		$exact = $this->query_instance->query_vars['exact'];
 		$search = '';
 
 		if ( !empty($search_terms) )
@@ -648,9 +654,9 @@ Class SearchEverything {
 	// create the Posts exclusion query
 	function se_build_exclude_posts()
 	{
-		global $wp_query, $wpdb;
+		global $wpdb;
 		$excludeQuery = '';
-		if (!empty($wp_query->query_vars['s']))
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 			$excludedPostList = trim($this->options['se_exclude_posts_list']);
 			if ($excludedPostList != '')
@@ -666,9 +672,9 @@ Class SearchEverything {
 	// create the Categories exclusion query
 	function se_build_exclude_categories()
 	{
-		global $wp_query, $wpdb;
+		global $wpdb;
 		$excludeQuery = '';
-		if (!empty($wp_query->query_vars['s']))
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 			$excludedCatList = trim($this->options['se_exclude_categories_list']);
 			if ($excludedCatList != '')
@@ -691,9 +697,9 @@ Class SearchEverything {
 	//join for excluding categories - Deprecated in 2.3
 	function se_exclude_categories_join($join)
 	{
-		global $wp_query, $wpdb;
-
-		if (!empty($wp_query->query_vars['s']))
+		global $wpdb;
+		
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 
 			if ($this->wp_ver23)
@@ -710,9 +716,9 @@ Class SearchEverything {
 	//join for searching comments
 	function se_comments_join($join)
 	{
-		global $wp_query, $wpdb;
+		global $wpdb;
 
-		if (!empty($wp_query->query_vars['s']))
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 			if ($this->wp_ver23)
 			{
@@ -738,9 +744,9 @@ Class SearchEverything {
 
 	function se_search_authors_join($join)
 	{
-		global $wp_query, $wpdb;
+		global $wpdb;
 
-		if (!empty($wp_query->query_vars['s']))
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 			$join .= " LEFT JOIN $wpdb->users AS u ON ($wpdb->posts.post_author = u.ID) ";
 		}
@@ -751,9 +757,9 @@ Class SearchEverything {
 	//join for searching metadata
 	function se_search_metadata_join($join)
 	{
-		global $wp_query, $wpdb;
+		global $wpdb;
 
-		if (!empty($wp_query->query_vars['s']))
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 
 			if ($this->wp_ver23)
@@ -768,9 +774,9 @@ Class SearchEverything {
 	//join for searching tags
 	function se_terms_join($join)
 	{
-		global $wp_query, $wpdb;
+		global $wpdb;
 
-		if (!empty($wp_query->query_vars['s']))
+		if (!empty($this->query_instance->query_vars['s']))
 		{
 
 			// if we're searching for categories
@@ -808,8 +814,8 @@ Class SearchEverything {
 	// in the search result page.
 	function se_postfilter($postcontent)
 	{
-		global $wp_query, $wpdb;
-		$s = $wp_query->query_vars['s'];
+		global $wpdb;
+		$s = $this->query_instance->query_vars['s'];
 		// highlighting
 		if (is_search() && $s != '')
 		{

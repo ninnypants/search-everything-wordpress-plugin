@@ -65,6 +65,8 @@ Class se_admin {
 			delete_option("se_options", $new_options);
 		}
 
+		// Announce SE+
+		echo "<div class=\"updated fade\" id=\"seplusnotice\"><p>" . __('<strong>Search Everything Plus</strong> is being developed and it\'s going to be awesome! <a href="http://wpsearchplugin.com/get-notified/">Signup now</a> and get notified when it\'s available.', 'SearchEverything') . "</p></div>";
 
 		$options = get_option('se_options');
 
@@ -404,4 +406,3 @@ Class se_admin {
 	}
 
 }
-?>

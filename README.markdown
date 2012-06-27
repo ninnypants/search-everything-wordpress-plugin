@@ -32,6 +32,11 @@ Search Everything increases the ability of the default Wordpress Search, options
 * Exclude Categories from search
 
 
+Search Everything Plus
+============
+Premium version coming soon, get notified on updates [here](http://wpsearchplugin.com/get-notified/ "Get updates").
+
+
 Installation
 ============
 
