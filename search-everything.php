@@ -56,7 +56,7 @@ Class SearchEverything {
 		//add filters based upon option settings
 		if ("Yes" == $this->options['se_use_tag_search'] || "Yes" == $this->options['se_use_category_search'] || "Yes" == $this->options['se_use_tax_search'])
 		{
-			add_filter('posts_join', array(&$this, 'se_terms_join'));
+			add_filter('posts_join', array(&$this, 'se_terms_join'), 10, 2);
 			if ("Yes" == $this->options['se_use_tag_search'])
 				{
 					$this->se_log("searching tags");
@@ -73,7 +73,7 @@ Class SearchEverything {
 
 		if ("Yes" == $this->options['se_use_page_search'])
 		{
-			add_filter('posts_where', array(&$this, 'se_search_pages'));
+			add_filter('posts_where', array(&$this, 'se_search_pages'), 10, 2);
 			$this->se_log("searching pages");
 		}
 
@@ -84,7 +84,7 @@ Class SearchEverything {
 
 		if ("Yes" == $this->options['se_use_comment_search'])
 		{
-			add_filter('posts_join', array(&$this, 'se_comments_join'));
+			add_filter('posts_join', array(&$this, 'se_comments_join'), 10, 2);
 			$this->se_log("searching comments");
 			// Highlight content
 			if("Yes" == $this->options['se_use_highlight'])
@@ -95,19 +95,19 @@ Class SearchEverything {
 
 		if ("Yes" == $this->options['se_use_draft_search'])
 		{
-			add_filter('posts_where', array(&$this, 'se_search_draft_posts'));
+			add_filter('posts_where', array(&$this, 'se_search_draft_posts'), 10, 2);
 			$this->se_log("searching drafts");
 		}
 
 		if ("Yes" == $this->options['se_use_attachment_search'])
 		{
-			add_filter('posts_where', array(&$this, 'se_search_attachments'));
+			add_filter('posts_where', array(&$this, 'se_search_attachments'), 10, 2);
 			$this->se_log("searching attachments");
 		}
 
 		if ("Yes" == $this->options['se_use_metadata_search'])
 		{
-			add_filter('posts_join', array(&$this, 'se_search_metadata_join'));
+			add_filter('posts_join', array(&$this, 'se_search_metadata_join'), 10, 2);
 			$this->se_log("searching metadata");
 		}
 
@@ -120,24 +120,24 @@ Class SearchEverything {
 
 		if ($this->options['se_exclude_categories_list'] != '')
 		{
-			add_filter('posts_join', array(&$this, 'se_exclude_categories_join'));
+			add_filter('posts_join', array(&$this, 'se_exclude_categories_join'), 10, 2);
 			$this->se_log("searching excluding categories");
 		}
 
 		if ("Yes" == $this->options['se_use_authors'])
 		{
 
-			add_filter('posts_join', array(&$this, 'se_search_authors_join'));
+			add_filter('posts_join', array(&$this, 'se_search_authors_join'), 10, 2);
 			$this->se_log("searching authors");
 		}
 
 		add_filter('posts_search', array(&$this, 'se_search_where'), 10, 2);
 
-		add_filter('posts_where', array(&$this, 'se_no_revisions'));
+		add_filter('posts_where', array(&$this, 'se_no_revisions'), 10, 2);
 
-		add_filter('posts_request', array(&$this, 'se_distinct'));
+		add_filter('posts_request', array(&$this, 'se_distinct'), 10, 2);
 
-		add_filter('posts_where', array(&$this, 'se_no_future'));
+		add_filter('posts_where', array(&$this, 'se_no_future'), 10, 2);
 
 		add_filter('posts_request', array(&$this, 'se_log_query'), 10, 2);
 
@@ -256,10 +256,10 @@ Class SearchEverything {
 	}
 
 	// Exclude post revisions
-	function se_no_revisions($where)
+	function se_no_revisions($where, $wp_query)
 	{
 		global $wpdb;
-		if (!empty($this->query_instance->query_vars['s']))
+		if ($wp_query->is_search)
 		{
 			if(!$this->wp_ver28)
 			{
@@ -271,10 +271,10 @@ Class SearchEverything {
 	}
 
 	// Exclude future posts fix provided by Mx
-	function se_no_future($where)
+	function se_no_future($where, $wp_query)
 	{
 		global $wpdb;
-		if (!empty($this->query_instance->query_vars['s']))
+		if ($wp_query->is_search)
 		{
 			if(!$this->wp_ver28)
 			{
@@ -305,10 +305,10 @@ Class SearchEverything {
 	}
 
 	//Duplicate fix provided by Tiago.Pocinho
-	function se_distinct($query)
+	function se_distinct($query, $wp_query)
 	{
 		global $wpdb;
-		if (!empty($this->query_instance->query_vars['s']))
+		if ($wp_query->is_search)
 		{
 			if (strstr($query, 'DISTINCT'))
 			{}
@@ -321,10 +321,10 @@ Class SearchEverything {
 	}
 
 	//search pages (except password protected pages provided by loops)
-	function se_search_pages($where)
+	function se_search_pages($where, $wp_query)
 	{
 		global $wpdb;
-		if (!empty($this->query_instance->query_vars['s']))
+		if ($wp_query->is_search)
 		{
 
 			$where = str_replace('"', '\'', $where);
@@ -371,10 +371,10 @@ Class SearchEverything {
 
 
 	//search drafts
-	function se_search_draft_posts($where)
+	function se_search_draft_posts($where, $wp_query)
 	{
 		global $wpdb;
-		if (!empty($this->query_instance->query_vars['s']))
+		if ($wp_query->is_search)
 		{
 			$where = str_replace('"', '\'', $where);
 			if(!$this->wp_ver28)
@@ -392,10 +392,10 @@ Class SearchEverything {
 	}
 
 	//search attachments
-	function se_search_attachments($where)
+	function se_search_attachments($where, $wp_query)
 	{
 		global $wpdb;
-		if (!empty($this->query_instance->query_vars['s']))
+		if ($wp_query->is_search)
 		{
 			$where = str_replace('"', '\'', $where);
 			if(!$this->wp_ver28)
@@ -695,11 +695,11 @@ Class SearchEverything {
 	}
 
 	//join for excluding categories - Deprecated in 2.3
-	function se_exclude_categories_join($join)
+	function se_exclude_categories_join($join, $wp_query)
 	{
 		global $wpdb;
 
-		if (!empty($this->query_instance->query_vars['s']))
+		if ($wp_query->is_search)
 		{
 
 			if ($this->wp_ver23)
@@ -714,11 +714,11 @@ Class SearchEverything {
 	}
 
 	//join for searching comments
-	function se_comments_join($join)
+	function se_comments_join($join, $wp_query)
 	{
 		global $wpdb;
 
-		if (!empty($this->query_instance->query_vars['s']))
+		if ($wp_query->is_search)
 		{
 			if ($this->wp_ver23)
 			{
@@ -742,11 +742,11 @@ Class SearchEverything {
 
 	//join for searching authors
 
-	function se_search_authors_join($join)
+	function se_search_authors_join($join, $wp_query)
 	{
 		global $wpdb;
 
-		if (!empty($this->query_instance->query_vars['s']))
+		if ($wp_query->is_search)
 		{
 			$join .= " LEFT JOIN $wpdb->users AS u ON ($wpdb->posts.post_author = u.ID) ";
 		}
@@ -755,11 +755,11 @@ Class SearchEverything {
 	}
 
 	//join for searching metadata
-	function se_search_metadata_join($join)
+	function se_search_metadata_join($join, $wp_query)
 	{
 		global $wpdb;
 
-		if (!empty($this->query_instance->query_vars['s']))
+		if ($wp_query->is_search)
 		{
 
 			if ($this->wp_ver23)
@@ -772,11 +772,11 @@ Class SearchEverything {
 	}
 
 	//join for searching tags
-	function se_terms_join($join)
+	function se_terms_join($join, $wp_query)
 	{
 		global $wpdb;
 
-		if (!empty($this->query_instance->query_vars['s']))
+		if ($wp_query->is_search)
 		{
 
 			// if we're searching for categories
