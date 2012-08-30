@@ -135,7 +135,7 @@ Class SearchEverything {
 
 		add_filter('posts_where', array(&$this, 'se_no_revisions'), 10, 2);
 
-		add_filter('posts_request', array(&$this, 'se_distinct'), 10, 2);
+		add_filter('posts_distinct', array(&$this, 'se_distinct'), 10, 2);
 
 		add_filter('posts_where', array(&$this, 'se_no_future'), 10, 2);
 
@@ -305,19 +305,14 @@ Class SearchEverything {
 	}
 
 	//Duplicate fix provided by Tiago.Pocinho
-	function se_distinct($query, $wp_query)
+	function se_distinct($distinct, $wp_query)
 	{
-		global $wpdb;
+
 		if ($wp_query->is_search)
-		{
-			if (strstr($query, 'DISTINCT'))
-			{}
-			else
-			{
-				$query = str_replace('SELECT', 'SELECT DISTINCT', $query);
-			}
-		}
-		return $query;
+			return 'DISTINCT';
+
+		return '';
+
 	}
 
 	//search pages (except password protected pages provided by loops)
