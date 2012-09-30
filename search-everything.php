@@ -244,9 +244,7 @@ Class SearchEverything {
 			foreach($terms as $term){
 				$search .= $seperator;
 
-
-					$search .= sprintf("((%s.post_title LIKE '%s%s%s') OR (%s.post_content LIKE '%s%s%s'))", $wpdb->posts, $n, $term, $n, $wpdb->posts, $n, $term, $n);
-
+					$search .= $wpdb->prepare("(($wpdb->posts.post_title LIKE %s) OR ($wpdb->posts.post_content LIKE %s))", $n.$term.$n, $n.$term.$n);
 
 				$seperator = ' AND ';
 			}
