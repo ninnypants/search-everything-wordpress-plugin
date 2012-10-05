@@ -677,7 +677,13 @@ Class SearchEverything {
 				$excl_list = implode(',', explode(',',$excludedCatList));
 				if ($this->wp_ver23)
 				{
-					$excludeQuery = " AND ( ctax.term_id NOT IN ( ".$excl_list." ))";
+					$cat = get_taxonomy('category');
+					$objects = '';
+					foreach($cat->object_type as $obj){
+						$objects .= $wpdb->prepare('%s,', $obj);
+					}
+					$objects = rtrim($objects, ',');
+					$excludeQuery = " AND ( $wpdb->posts.post_type NOT IN ($objects) OR ctax.term_id NOT IN ( ".$excl_list." ))";
 				}
 				else
 				{
@@ -699,7 +705,13 @@ Class SearchEverything {
 
 			if ($this->wp_ver23)
 			{
-				$join .= " LEFT JOIN $wpdb->term_relationships AS crel ON ($wpdb->posts.ID = crel.object_id) LEFT JOIN $wpdb->term_taxonomy AS ctax ON (ctax.taxonomy = 'category' AND crel.term_taxonomy_id = ctax.term_taxonomy_id) LEFT JOIN $wpdb->terms AS cter ON (ctax.term_id = cter.term_id) ";
+				$cat = get_taxonomy('category');
+				$objects = '';
+				foreach($cat->object_type as $obj){
+					$objects .= $wpdb->prepare('%s,', $obj);
+				}
+				$objects = rtrim($objects, ',');
+				$join .= " LEFT JOIN $wpdb->term_relationships AS crel ON ($wpdb->posts.ID = crel.object_id AND $wpdb->posts.post_type IN ($objects)) LEFT JOIN $wpdb->term_taxonomy AS ctax ON (ctax.taxonomy = 'category' AND crel.term_taxonomy_id = ctax.term_taxonomy_id  AND $wpdb->posts.post_type IN ($objects)) LEFT JOIN $wpdb->terms AS cter ON (ctax.term_id = cter.term_id AND $wpdb->posts.post_type IN ($objects)) ";
 			} else {
 				$join .= "LEFT JOIN $wpdb->post2cat AS c ON $wpdb->posts.ID = c.post_id";
 			}
