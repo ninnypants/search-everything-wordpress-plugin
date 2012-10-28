@@ -37,6 +37,7 @@ Class SearchEverything {
 	var $wp_ver25;
 	var $wp_ver28;
 	private $query_instance;
+	private $additional_terms;
 
 	function SearchEverything(){
 		global $wp_version;
@@ -170,6 +171,42 @@ Class SearchEverything {
 				preg_match_all('/".*?("|$)|((?<=[\\s",+])|^)[^\\s",+]+/', $s, $matches);
 				$search_terms = array_map(create_function('$a', 'return trim($a, "\\"\'\\n\\r ");'), $matches[0]);
 			}
+
+			// Apostrophe U+0027 '
+			// Modifier Letter Apostrophe U+02BC ʼ
+			// Right Single Quote U+2019 ’ &rsquo;
+			// Prime U+2032 ′
+			$replace = array();
+			foreach( $search_terms as $term )
+			{
+				if( preg_match( '#\x{0027}|\x{02BC}|\x{2019}|\x{2032}#u', $term ) )
+					$replace[] = $term;
+			}
+
+			if( !empty( $replace ) ){
+				$this->additional_terms = array();
+				$replacements = array(
+					"'" => "'",
+					'ʼ' => 'ʼ',
+					'’' => '’',
+					'′' => '′',
+					'&#39;',
+					'&#700;',
+					'&#8217;',
+					'&rsquo;',
+					'&#8242;',
+				);
+				foreach( $replace as $r ){
+					preg_match( '#(\x{0027}|\x{02BC}|\x{2019}|\x{2032})#u', $r, $matches );
+					$replacements_tmp = $replacements;
+					unset( $replacements_tmp[$matches[1]]);
+					$this->additional_terms[$r] = array();
+					foreach( $replacements_tmp as $rep ){
+						$this->additional_terms[$r][] = str_replace( $matches[1], $rep, $r);
+					}
+
+				}
+			}
 		}
 		return $search_terms;
 	}
@@ -244,8 +281,16 @@ Class SearchEverything {
 			foreach($terms as $term){
 				$search .= $seperator;
 
+				if( !isset( $this->additional_terms[$term] ) ){
+					$search .= sprintf("((%s.post_title LIKE '%s%s%s') OR (%s.post_content LIKE '%s%s%s'))", $wpdb->posts, $n, $wpdb->escape($term), $n, $wpdb->posts, $n, $wpdb->escape($term), $n);
+				}else{
+					$tmp_search = sprintf( "(%s.post_title LIKE '%s%s%s') OR (%s.post_content LIKE '%s%s%s')", $wpdb->posts, $n, $wpdb->escape( $term ), $n, $wpdb->posts, $n, $wpdb->escape( $term ), $n );
+					foreach( $this->additional_terms[$term] as $at ){
+						$tmp_search .= sprintf( "OR (%s.post_title LIKE '%s%s%s') OR (%s.post_content LIKE '%s%s%s')", $wpdb->posts, $n, $wpdb->escape( $at ), $n, $wpdb->posts, $n, $wpdb->escape( $at ), $n );
+					}
 
-					$search .= sprintf("((%s.post_title LIKE '%s%s%s') OR (%s.post_content LIKE '%s%s%s'))", $wpdb->posts, $n, $term, $n, $wpdb->posts, $n, $term, $n);
+					$search .= '(' . $tmp_search . ')';
+				}
 
 
 				$seperator = ' AND ';
