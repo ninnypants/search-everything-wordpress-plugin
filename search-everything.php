@@ -31,7 +31,7 @@ $SE = new SearchEverything();
 
 Class SearchEverything {
 
-	var $logging = false;
+	var $logging = true;
 	var $options;
 	var $wp_ver23;
 	var $wp_ver25;
@@ -282,11 +282,11 @@ Class SearchEverything {
 				$search .= $seperator;
 
 				if( !isset( $this->additional_terms[$term] ) ){
-					$search .= sprintf("((%s.post_title LIKE '%s%s%s') OR (%s.post_content LIKE '%s%s%s'))", $wpdb->posts, $n, $wpdb->escape($term), $n, $wpdb->posts, $n, $wpdb->escape($term), $n);
+					$search .= $wpdb->prepare( "(($wpdb->posts.post_title LIKE %s) OR ($wpdb->posts.post_content LIKE %s))", $n.$term.$n, $n.$term.$n );
 				}else{
-					$tmp_search = sprintf( "(%s.post_title LIKE '%s%s%s') OR (%s.post_content LIKE '%s%s%s')", $wpdb->posts, $n, $wpdb->escape( $term ), $n, $wpdb->posts, $n, $wpdb->escape( $term ), $n );
+					$tmp_search = $wpdb->prepare( "($wpdb->posts.post_title LIKE %s) OR ($wpdb->posts.post_content LIKE %s)", $n.$term.$n, $n.$term.$n );
 					foreach( $this->additional_terms[$term] as $at ){
-						$tmp_search .= sprintf( "OR (%s.post_title LIKE '%s%s%s') OR (%s.post_content LIKE '%s%s%s')", $wpdb->posts, $n, $wpdb->escape( $at ), $n, $wpdb->posts, $n, $wpdb->escape( $at ), $n );
+						$tmp_search .= $wpdb->prepare( " OR ($wpdb->posts.post_title LIKE %s) OR ($wpdb->posts.post_content LIKE %s)", $n.$at.$n, $n.$at.$n );
 					}
 
 					$search .= '(' . $tmp_search . ')';
